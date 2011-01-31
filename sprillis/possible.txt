@@ -1,0 +1,1066 @@
+If you don't know how to exploit these, check http://www.owasp.org/index.php/Category:Attack
+
+$_REQUEST['submit_sql']) && ! empty($sql_query)) {
+    $goto      = 'db_sql.php';
+    $zero_rows = htmlspecialchars($GLOBALS['strSuccess']);
+    require './sql.php';
+    exit;
+} else {
+    $sub_part  = '_qbe';
+    require './libraries/db_common.inc.php';
+    $url_query .= '&amp;goto=db_qbe.php';
+    $url_params['goto'] = 'db_qbe.php' - possible LFI vuln in /home/starwiz/Desktop/phpmyad/db_qbe.php
+$_REQUEST['submitoptions'])) {
+    $_message = '';
+    $warning_messages = array();
+
+    if (isset($_REQUEST['new_name'])) {
+        if ($pma_table->rename($_REQUEST['new_name'])) {
+            $_message .= $pma_table->getLastMessage();
+            $result = true;
+            $GLOBALS['table'] = $pma_table->getName();
+            $reread_info = true;
+            $reload = true;
+        } else {
+            $_message .= $pma_table->getLastError();
+            $result = false;
+        }
+    }
+    if (isset($_REQUEST['comment'])
+      && urldecode($_REQUEST['prev_comment']) !== $_REQUEST['comment']) {
+        $table_alters[] = 'COMMENT = \'' . PMA_sqlAddslashes($_REQUEST['comment']) . '\'';
+    }
+    if (! empty($_REQUEST['new_tbl_type'])
+      && strtolower($_REQUEST['new_tbl_type']) !== strtolower($tbl_type)) {
+        $table_alters[] = 'ENGINE = ' . $_REQUEST['new_tbl_type'];
+        $tbl_type = $_REQUEST['new_tbl_type'];
+        // reset the globals for the new engine
+        PMA_set_global_variables_for_engine($tbl_type);
+        if ($is_aria) {
+            $transactional = (isset($transactional) && $transactional == '0') ? '0' : '1';
+            $page_checksum = (isset($page_checksum)) ? $page_checksum : '';
+        }
+    }
+
+    if (! empty($_REQUEST['tbl_collation'])
+      && $_REQUEST['tbl_collation'] !== $tbl_collation) {
+        $table_alters[] = 'DEFAULT ' . PMA_generateCharsetQueryPart($_REQUEST['tbl_collation']);
+    }
+
+    if (($is_myisam_or_aria || $is_isam)
+      && isset($_REQUEST['new_pack_keys'])
+      && $_REQUEST['new_pack_keys'] != (string)$pack_keys) {
+        $table_alters[] = 'pack_keys = ' . $_REQUEST['new_pack_keys'];
+    }
+
+    $checksum = empty($checksum) ? '0' : '1';
+    $_REQUEST['new_checksum'] = empty($_REQUEST['new_checksum']) ? '0' : '1';
+    if ($is_myisam_or_aria
+      && $_REQUEST['new_checksum'] !== $checksum) {
+        $table_alters[] = 'checksum = ' . $_REQUEST['new_checksum'];
+    }
+
+    $_REQUEST['new_transactional'] = empty($_REQUEST['new_transactional']) ? '0' : '1';
+    if ($is_aria
+      && $_REQUEST['new_transactional'] !== $transactional) {
+        $table_alters[] = 'TRANSACTIONAL = ' . $_REQUEST['new_transactional'];
+    }
+
+    $_REQUEST['new_page_checksum'] = empty($_REQUEST['new_page_checksum']) ? '0' : '1';
+    if ($is_aria
+      && $_REQUEST['new_page_checksum'] !== $page_checksum) {
+        $table_alters[] = 'PAGE_CHECKSUM = ' . $_REQUEST['new_page_checksum'];
+    }
+
+    $delay_key_write = empty($delay_key_write) ? '0' : '1';
+    $_REQUEST['new_delay_key_write'] = empty($_REQUEST['new_delay_key_write']) ? '0' : '1';
+    if ($is_myisam_or_aria
+      && $_REQUEST['new_delay_key_write'] !== $delay_key_write) {
+        $table_alters[] = 'delay_key_write = ' . $_REQUEST['new_delay_key_write'];
+    }
+
+    if (($is_myisam_or_aria || $is_innodb || $is_pbxt)
+      &&  ! empty($_REQUEST['new_auto_increment'])
+      && (! isset($auto_increment) || $_REQUEST['new_auto_increment'] !== $auto_increment)) {
+        $table_alters[] = 'auto_increment = ' . PMA_sqlAddslashes($_REQUEST['new_auto_increment']);
+    }
+
+    if (($is_myisam_or_aria || $is_innodb || $is_pbxt)
+      &&  ! empty($_REQUEST['new_row_format'])
+      && (! isset($row_format) || strtolower($_REQUEST['new_row_format']) !== strtolower($row_format))) {
+        $table_alters[] = 'ROW_FORMAT = ' . PMA_sqlAddslashes($_REQUEST['new_row_format']);
+    }
+
+    if (count($table_alters) > 0) {
+        $sql_query      = 'ALTER TABLE ' . PMA_backquote($GLOBALS['table']);
+        $sql_query     .= "\r\n" . implode("\r\n", $table_alters);
+        $result        .= PMA_DBI_query($sql_query) ? true : false;
+        $reread_info    = true;
+        unset($table_alters);
+        foreach (PMA_DBI_get_warnings() as $warning) {
+            // In MariaDB 5.1.44, when altering a table from Maria to MyISAM 
+            // and if TRANSACTIONAL was set, the system reports an error;
+            // I discussed with a Maria developer and he agrees that this
+            // should not be reported with a Level of Error, so here
+            // I just ignore it. But there are other 1478 messages
+            // that it's better to show.
+            if (! ($_REQUEST['new_tbl_type'] == 'MyISAM' && $warning['Code'] == '1478' && $warning['Level'] == 'Error')) {
+                $warning_messages[] = $warning['Level'] . ': #' . $warning['Code']
+                    . ' ' . $warning['Message'];
+            }
+        }
+    }
+}
+/**
+ * Reordering the table has been requested by the user
+ */
+if (isset($_REQUEST['submitorderby']) && ! empty($_REQUEST['order_field'])) {
+    $sql_query = '
+        ALTER TABLE ' . PMA_backquote($GLOBALS['table']) . '
+        ORDER BY ' . PMA_backquote(urldecode($_REQUEST['order_field']));
+    if (isset($_REQUEST['order_order']) && $_REQUEST['order_order'] === 'desc') {
+        $sql_query .= ' DESC';
+    }
+    $result = PMA_DBI_query($sql_query);
+} // end if
+
+/**
+ * A partition operation has been requested by the user
+ */
+if (isset($_REQUEST['submit_partition']) && ! empty($_REQUEST['partition_operation'])) {
+    $sql_query = 'ALTER TABLE ' . PMA_backquote($GLOBALS['table']) . ' ' . $_REQUEST['partition_operation'] . ' PARTITION ' . $_REQUEST['partition_name'];
+    $result = PMA_DBI_query($sql_query);
+} // end if
+
+if ($reread_info) {
+    // to avoid showing the old value (for example the AUTO_INCREMENT) after
+    // a change, clear the cache
+    PMA_Table::$cache = array(); 
+    $page_checksum = $checksum = $delay_key_write = 0;
+    require './libraries/tbl_info.inc.php';
+}
+unset($reread_info);
+
+/**
+ * Displays top menu links
+ */
+require_once './libraries/tbl_links.inc.php';
+
+if (isset($result) && empty($zero_rows)) {
+    // set to success by default, because result set could be empty
+    // (for example, a table rename)
+    $_type = 'success';
+    if (empty($_message)) {
+        $_message = $result ? $strSuccess : $strError;
+        // $result should exist, regardless of $_message
+        $_type = $result ? 'success' : 'error';
+    }
+    if (! empty($warning_messages)) {
+        $_message = new PMA_Message;
+        $_message->addMessages($warning_messages);
+        $_message->isWarning(true);
+        unset($warning_messages);
+    }
+    PMA_showMessage($_message, $sql_query, $_type);
+    unset($_message, $_type);
+}
+
+$url_params['goto'] = 'tbl_operations.php' - possible LFI vuln in /home/starwiz/Desktop/phpmyad/tbl_operations.php
+$_REQUEST['insert_rows']) && is_numeric($_REQUEST['insert_rows']) && $_REQUEST['insert_rows'] != $cfg['InsertRows']) {
+    $cfg['InsertRows'] = $_REQUEST['insert_rows'];
+    $GLOBALS['js_include'][] = 'tbl_change.js';
+    require_once './libraries/header.inc.php';
+    require './tbl_change.php';
+    exit;
+}
+
+if (isset($_REQUEST['after_insert'])
+ && in_array($_REQUEST['after_insert'], array('new_insert', 'same_insert', 'edit_next'))) {
+    $url_params['after_insert'] = $_REQUEST['after_insert'];
+    //$GLOBALS['goto'] = 'tbl_change.php' - possible LFI vuln in /home/starwiz/Desktop/phpmyad/tbl_replace.php
+$_REQUEST['rows_to_delete'], 'array')
+ && ! isset($_REQUEST['mult_btn'])) {
+    $disp_message = $strNoRowsSelected;
+    $disp_query = '';
+    require './sql.php';
+    require_once './libraries/footer.inc.php';
+}
+
+if (isset($_REQUEST['submit_mult'])) {
+    $submit_mult = $_REQUEST['submit_mult'];
+// workaround for IE problem:
+} elseif (isset($_REQUEST['submit_mult_delete_x'])) {
+    $submit_mult = 'row_delete';
+} elseif (isset($_REQUEST['submit_mult_change_x'])) {
+    $submit_mult = 'row_edit';
+} elseif (isset($_REQUEST['submit_mult_export_x'])) {
+    $submit_mult = 'row_export';
+}
+
+// If the 'Ask for confirmation' button was pressed, this can only come
+// from 'delete' mode, so we set it straight away.
+if (isset($_REQUEST['mult_btn'])) {
+    $submit_mult = 'row_delete';
+}
+
+switch($submit_mult) {
+    case 'row_delete':
+    case 'row_edit':
+    case 'row_export':
+        // leave as is
+        break;
+
+    case $GLOBALS['strExport']:
+        $submit_mult = 'row_export';
+        break;
+
+    case $GLOBALS['strDelete']:
+    case $GLOBALS['strKill']:
+        $submit_mult = 'row_delete';
+        break;
+
+    default:
+    case $GLOBALS['strEdit']:
+        $submit_mult = 'row_edit';
+        break;
+}
+
+$GLOBALS['js_include'][] = 'tbl_change.js';
+$GLOBALS['js_include'][] = 'functions.js';
+
+require_once './libraries/header.inc.php';
+
+if (!empty($submit_mult)) {
+    switch($submit_mult) {
+        case 'row_edit':
+            // garvin: As we got the fields to be edited from the 
+            // 'rows_to_delete' checkbox, we use the index of it as the
+            // indicating WHERE clause. Then we build the array which is used 
+            // for the tbl_change.php script.
+            $where_clause = array();
+            foreach ($_REQUEST['rows_to_delete'] as $i_where_clause => $del_query) {
+                $where_clause[] = urldecode($i_where_clause);
+            }
+
+            $active_page = 'tbl_change.php';
+            include './tbl_change.php';
+            break;
+
+        case 'row_export':
+            // Needed to allow SQL export
+            $single_table = TRUE;
+
+            // garvin: As we got the fields to be edited from the 
+            // 'rows_to_delete' checkbox, we use the index of it as the
+            // indicating WHERE clause. Then we build the array which is used 
+            // for the tbl_change.php script.
+            $where_clause = array();
+            foreach ($_REQUEST['rows_to_delete'] as $i_where_clause => $del_query) {
+                $where_clause[] = urldecode($i_where_clause);
+            }
+
+            $active_page = 'tbl_export.php';
+            include './tbl_export.php';
+            break;
+
+        case 'row_delete':
+        default:
+            $action = 'tbl_row_action.php';
+            $err_url = 'tbl_row_action.php' . PMA_generate_common_url($GLOBALS['url_params']);
+            if (! isset($_REQUEST['mult_btn'])) {
+                $original_sql_query = $sql_query;
+                $original_url_query = $url_query;
+            }
+            require './libraries/mult_submits.inc.php';
+            $_url_params = $GLOBALS['url_params'];
+            $_url_params['goto'] = 'tbl_sql.php' - possible LFI vuln in /home/starwiz/Desktop/phpmyad/tbl_row_action.php
+$_REQUEST['where_clause'])) {
+    $where_clause = $_REQUEST['where_clause'];
+}
+if (isset($_REQUEST['clause_is_unique'])) {
+    $clause_is_unique = $_REQUEST['clause_is_unique'];
+}
+if (isset($_SESSION['edit_next'])) {
+    $where_clause = $_SESSION['edit_next'];
+    unset($_SESSION['edit_next']);
+    $after_insert = 'edit_next';
+}
+if (isset($_REQUEST['sql_query'])) {
+    $sql_query = $_REQUEST['sql_query'];
+}
+if (isset($_REQUEST['ShowFunctionFields'])) {
+    $cfg['ShowFunctionFields'] = $_REQUEST['ShowFunctionFields'];
+}
+
+/**
+ * load relation data, foreign keys
+ */
+require_once './libraries/relation.lib.php';
+
+/**
+ * file listing
+ */
+require_once './libraries/file_listing.php';
+
+
+/**
+ * Defines the url to return to in case of error in a sql statement
+ * (at this point, $GLOBALS['goto'] will be set but could be empty)
+ */
+if (empty($GLOBALS['goto'])) {
+    if (strlen($table)) {
+        // avoid a problem (see bug #2202709)
+        $GLOBALS['goto'] = 'tbl_sql.php' - possible LFI vuln in /home/starwiz/Desktop/phpmyad/tbl_change.php
+$_REQUEST['search_str']
+ * @uses    $_REQUEST['submit_search']
+ * @uses    $_REQUEST['search_option']
+ * @uses    $_REQUEST['table_select']
+ * @uses    $_REQUEST['unselectall']
+ * @uses    $_REQUEST['selectall']
+ * @uses    $_REQUEST['field_str']
+ * @uses    is_string()
+ * @uses    htmlspecialchars()
+ * @uses    array_key_exists()
+ * @uses    is_array()
+ * @uses    array_intersect()
+ * @uses    sprintf()
+ * @uses    in_array()
+ * @version $Id$
+ * @author  Thomas Chaumeny <chaume92 at aol.com>
+ * @package phpMyAdmin
+ */
+
+/**
+ *
+ */
+require_once './libraries/common.inc.php';
+
+/**
+ * Gets some core libraries and send headers
+ */
+require './libraries/db_common.inc.php';
+
+/**
+ * init
+ */
+// If config variable $GLOBALS['cfg']['Usedbsearch'] is on false : exit.
+if (! $GLOBALS['cfg']['UseDbSearch']) {
+    PMA_mysqlDie($GLOBALS['strAccessDenied'], '', false, $err_url);
+} // end if
+$url_query .= '&amp;goto=db_search.php';
+$url_params['goto'] = 'db_search.php' - possible LFI vuln in /home/starwiz/Desktop/phpmyad/db_search.php
+$_REQUEST['submit_mult_change_x'])) {
+    $submit_mult = $strChange;
+} elseif (isset($_REQUEST['submit_mult_drop_x'])) {
+    $submit_mult = $strDrop;
+} elseif (isset($_REQUEST['submit_mult_primary_x'])) {
+    $submit_mult = $strPrimary;
+} elseif (isset($_REQUEST['submit_mult_index_x'])) {
+    $submit_mult = $strIndex;
+} elseif (isset($_REQUEST['submit_mult_unique_x'])) {
+    $submit_mult = $strUnique;
+} elseif (isset($_REQUEST['submit_mult_fulltext_x'])) {
+    $submit_mult = $strIdxFulltext;
+} elseif (isset($_REQUEST['submit_mult_browse_x'])) {
+    $submit_mult = $strBrowse;
+} elseif (isset($_REQUEST['submit_mult'])) {
+    $submit_mult = $_REQUEST['submit_mult'];
+} elseif (isset($_REQUEST['mult_btn']) && $_REQUEST['mult_btn'] == $strYes) {
+    $submit_mult = 'row_delete';
+    if (isset($_REQUEST['selected'])) {
+        $_REQUEST['selected_fld'] = $_REQUEST['selected'];
+    }
+}
+
+if (! empty($submit_mult) && isset($_REQUEST['selected_fld'])) {
+    $err_url = 'tbl_structure.php?' . PMA_generate_common_url($db, $table);
+    if ($submit_mult == $strBrowse) {
+        // browsing the table displaying only selected fields/columns
+        $GLOBALS['active_page'] = 'sql.php' - possible LFI vuln in /home/starwiz/Desktop/phpmyad/tbl_structure.php
+$_REQUEST['selected_fld'] as $idx => $sval) {
+            if ($sql_query == '') {
+                $sql_query .= 'SELECT ' . PMA_backquote($sval);
+            } else {
+                $sql_query .=  ', ' . PMA_backquote($sval);
+            }
+        }
+
+        // what is this htmlspecialchars() for??
+        //$sql_query .= ' FROM ' . PMA_backquote(htmlspecialchars($table));
+        $sql_query .= ' FROM ' . PMA_backquote($db) . '.' . PMA_backquote($table);
+        require './sql.php';
+        exit;
+    } else {
+        // handle multiple field commands
+        // handle confirmation of deleting multiple fields/columns
+        $action = 'tbl_structure.php';
+        require './libraries/mult_submits.inc.php';
+        //require_once './libraries/header.inc.php';
+        //require_once './libraries/tbl_links.inc.php';
+
+        if (empty($message)) {
+            $message = PMA_Message::success();
+        }
+    }
+}
+
+/**
+ * Gets the relation settings
+ */
+$cfgRelation = PMA_getRelationsParam();
+
+/**
+ * Runs common work
+ */
+require_once './libraries/tbl_common.php';
+$url_query .= '&amp;goto=tbl_structure.php&amp;back=tbl_structure.php';
+$url_params['goto'] = 'tbl_structure.php' - possible LFI vuln in /home/starwiz/Desktop/phpmyad/tbl_structure.php
+$_REQUEST['old_usr']
+ * @uses    PMA_sendHeaderLocation()
+ * @uses    PMA_select_language()
+ * @uses    PMA_select_server()
+ * @uses    file_exists()
+ * @uses    sprintf()
+ * @uses    count()
+ * @uses    htmlspecialchars()
+ * @uses    is_array()
+ * @global  string    the last connection error
+ *
+ * @access  public
+ */
+function PMA_auth()
+{
+    global $conn_error;
+
+    /* Perform logout to custom URL */
+    if (! empty($_REQUEST['old_usr'])
+     && ! empty($GLOBALS['cfg']['Server']['LogoutURL'])) {
+        PMA_sendHeaderLocation($GLOBALS['cfg']['Server']['LogoutURL']);
+        exit;
+    }
+
+    /* No recall if blowfish secret is not configured as it would produce garbage */
+    if ($GLOBALS['cfg']['LoginCookieRecall'] && !empty($GLOBALS['cfg']['blowfish_secret'])) {
+        $default_user   = $GLOBALS['PHP_AUTH_USER'];
+        $default_server = $GLOBALS['pma_auth_server'];
+        $autocomplete   = '';
+    } else {
+        $default_user   = '';
+        $default_server = '';
+        // skip the IE autocomplete feature.
+        $autocomplete   = ' autocomplete="off"';
+    }
+
+    $cell_align = ($GLOBALS['text_dir'] == 'ltr') ? 'left' : 'right';
+
+    // Defines the charset to be used
+    header('Content-Type: text/html; charset=' . $GLOBALS['charset']);
+    // Defines the "item" image depending on text direction
+    $item_img = $GLOBALS['pmaThemeImage'] . 'item_' . $GLOBALS['text_dir'] . '.png';
+
+    /* HTML header; do not show here the PMA version to improve security */
+    $page_title = 'phpMyAdmin ';
+    require './libraries/header_meta_style.inc.php';
+    ?>
+<script type="text/javascript">
+//<![CDATA[
+// show login form in top frame
+if (top != self) {
+    window.top.location.href=location;
+}
+//]]>
+</script>
+</head>
+
+<body class="loginform">
+
+    <?php
+    if (file_exists('./config.header.inc.php')) {
+          require './config.header.inc.php';
+    }
+    ?>
+
+<div class="container">
+<a href="http://www.phpmyadmin.net" target="_blank" class="logo"><?php
+    $logo_image = $GLOBALS['pmaThemeImage'] . 'logo_right.png';
+    if (@file_exists($logo_image)) {
+        echo '<img src="' . $logo_image . '" id="imLogo" name="imLogo" alt="phpMyAdmin" border="0" />';
+    } else {
+        echo '<img name="imLogo" id="imLogo" src="' . $GLOBALS['pmaThemeImage'] . 'pma_logo.png' . '" '
+           . 'border="0" width="88" height="31" alt="phpMyAdmin" />';
+    }
+    ?></a>
+<h1>
+    <?php
+    echo sprintf($GLOBALS['strWelcome'],
+        '<bdo dir="ltr" xml:lang="en">' . $page_title . '</bdo>');
+    ?>
+</h1>
+    <?php
+
+    // Show error message
+    if (! empty($conn_error)) {
+        PMA_Message::rawError($conn_error)->display();
+    }
+
+    // Displays the languages form
+    if (empty($GLOBALS['cfg']['Lang'])) {
+        require_once './libraries/display_select_lang.lib.php';
+        // use fieldset, don't show doc link
+        PMA_select_language(true, false);
+    }
+
+    ?>
+<br />
+<!-- Login form -->
+<form method="post" action="index.php" name="login_form"<?php echo $autocomplete; ?> target="_top" class="login">
+    <fieldset>
+    <legend>
+<?php
+    echo $GLOBALS['strLogin'];
+    echo '<a href="./Documentation.html" target="documentation" ' .
+        'title="' . $GLOBALS['strPmaDocumentation'] . '">';
+    if ($GLOBALS['cfg']['ReplaceHelpImg']) {
+        echo '<img class="icon" src="' . $GLOBALS['pmaThemeImage'] . 'b_help.png" width="11" height="11" alt="' . $GLOBALS['strPmaDocumentation'] . '" />';
+    } else {
+        echo '(*)';
+    }
+    echo '</a>';
+?>
+</legend>
+
+<?php if ($GLOBALS['cfg']['AllowArbitraryServer']) { ?>
+        <div class="item">
+            <label for="input_servername" title="<?php echo $GLOBALS['strLogServerHelp']; ?>"><?php echo $GLOBALS['strLogServer']; ?></label>
+            <input type="text" name="pma_servername" id="input_servername" value="<?php echo htmlspecialchars($default_server); ?>" size="24" class="textfield" title="<?php echo $GLOBALS['strLogServerHelp']; ?>" />
+        </div>
+<?php } ?>
+        <div class="item">
+            <label for="input_username"><?php echo $GLOBALS['strLogUsername']; ?></label>
+            <input type="text" name="pma_username" id="input_username" value="<?php echo htmlspecialchars($default_user); ?>" size="24" class="textfield"/>
+        </div>
+        <div class="item">
+            <label for="input_password"><?php echo $GLOBALS['strLogPassword']; ?></label>
+            <input type="password" name="pma_password" id="input_password" value="" size="24" class="textfield" />
+        </div>
+    <?php
+    if (count($GLOBALS['cfg']['Servers']) > 1) {
+        ?>
+        <div class="item">
+            <label for="select_server"><?php echo $GLOBALS['strServerChoice']; ?>:</label>
+            <select name="server" id="select_server"
+        <?php
+        if ($GLOBALS['cfg']['AllowArbitraryServer']) {
+            echo ' onchange="document.forms[\'login_form\'].elements[\'pma_servername\'].value = \'\'" ';
+        }
+        echo '>';
+
+        require_once './libraries/select_server.lib.php';
+        PMA_select_server(false, false);
+
+        echo '</select></div>';
+    } else {
+        echo '    <input type="hidden" name="server" value="' . $GLOBALS['server'] . '" />';
+    } // end if (server choice)
+    ?>
+    </fieldset>
+    <fieldset class="tblFooters">
+        <input value="<?php echo $GLOBALS['strGo']; ?>" type="submit" id="input_go" />
+    <?php
+    $_form_params = array();
+    if (! empty($GLOBALS['target'])) {
+        $_form_params['target'] = $GLOBALS['target'];
+    }
+    if (! empty($GLOBALS['db'])) {
+        $_form_params['db'] = $GLOBALS['db'];
+    }
+    if (! empty($GLOBALS['table'])) {
+        $_form_params['table'] = $GLOBALS['table'];
+    }
+    // do not generate a "server" hidden field as we want the "server"
+    // drop-down to have priority
+    echo PMA_generate_common_hidden_inputs($_form_params, '', 0, 'server');
+    ?>
+    </fieldset>
+</form>
+
+    <?php
+
+    // BEGIN Swekey Integration
+    Swekey_login('input_username', 'input_go');
+    // END Swekey Integration
+
+    // show the "Cookies required" message only if cookies are disabled
+    // (we previously tried to set some cookies)
+    if (empty($_COOKIE)) {
+        trigger_error($GLOBALS['strCookiesRequired'], E_USER_NOTICE);
+    }
+    if ($GLOBALS['error_handler']->hasDisplayErrors()) {
+        echo '<div>';
+        $GLOBALS['error_handler']->dispErrors();
+        echo '</div>';
+    }
+    ?>
+</div>
+<script type="text/javascript">
+// <![CDATA[
+function PMA_focusInput()
+{
+    var input_username = document.getElementById('input_username');
+    var input_password = document.getElementById('input_password');
+    if (input_username.value == '') {
+        input_username.focus();
+    } else {
+        input_password.focus();
+    }
+}
+
+window.setTimeout('PMA_focusInput()', 500);
+// ]]>
+</script>
+    <?php
+    if (file_exists('./config.footer.inc.php')) {
+         require './config.footer.inc.php';
+    }
+    ?>
+</body>
+</html>
+    <?php
+    exit;
+} // end of the 'PMA_auth()' function
+
+
+
+/**
+ * Gets advanced authentication settings
+ *
+ * this function DOES NOT check authentication - it just checks/provides
+ * authentication credentials required to connect to the MySQL server
+ * usually with PMA_DBI_connect()
+ *
+ * it returns false if something is missing - which usually leads to
+ * PMA_auth() which displays login form
+ *
+ * it returns true if all seems ok which usually leads to PMA_auth_set_user()
+ *
+ * it directly switches to PMA_auth_fails() if user inactivity timout is reached
+ *
+ * @todo    AllowArbitraryServer on does not imply that the user wants an
+ *          arbitrary server, or? so we should also check if this is filled and
+ *          not only if allowed
+ * @uses    $GLOBALS['PHP_AUTH_USER']
+ * @uses    $GLOBALS['PHP_AUTH_PW']
+ * @uses    $GLOBALS['no_activity']
+ * @uses    $GLOBALS['server']
+ * @uses    $GLOBALS['from_cookie']
+ * @uses    $GLOBALS['pma_auth_server']
+ * @uses    $cfg['AllowArbitraryServer']
+ * @uses    $cfg['LoginCookieValidity']
+ * @uses    $cfg['Servers']
+ * @uses    $_REQUEST['old_usr'] from logout link
+ * @uses    $_REQUEST['pma_username'] from login form
+ * @uses    $_REQUEST['pma_password'] from login form
+ * @uses    $_REQUEST['pma_servername'] from login form
+ * @uses    $_COOKIE
+ * @uses    $_SESSION['last_access_time']
+ * @uses    PMA_removeCookie()
+ * @uses    PMA_blowfish_decrypt()
+ * @uses    PMA_auth_fails()
+ * @uses    time()
+ *
+ * @return  boolean   whether we get authentication settings or not
+ *
+ * @access  public
+ */
+function PMA_auth_check()
+{
+    // Initialization
+    /**
+     * @global $GLOBALS['pma_auth_server'] the user provided server to connect to
+     */
+    $GLOBALS['pma_auth_server'] = '';
+
+    $GLOBALS['PHP_AUTH_USER'] = $GLOBALS['PHP_AUTH_PW'] = '';
+    $GLOBALS['from_cookie'] = false;
+
+    // BEGIN Swekey Integration
+    if (! Swekey_auth_check()) {
+        return false;
+    }
+    // END Swekey Integration
+
+    if (defined('PMA_CLEAR_COOKIES')) {
+        foreach($GLOBALS['cfg']['Servers'] as $key => $val) {
+            PMA_removeCookie('pmaPass-' . $key);
+            PMA_removeCookie('pmaServer-' . $key);
+            PMA_removeCookie('pmaUser-' . $key);
+        }
+        return false;
+    }
+
+    if (! empty($_REQUEST['old_usr'])) {
+        // The user wants to be logged out
+        // -> delete his choices that were stored in session
+
+        // according to the PHP manual we should do this before the destroy:
+        //$_SESSION = array();
+        // but we still need some parts of the session information
+        // in libraries/header_meta_style.inc.php
+
+        session_destroy();
+        // -> delete password cookie(s)
+        if ($GLOBALS['cfg']['LoginCookieDeleteAll']) {
+            foreach($GLOBALS['cfg']['Servers'] as $key => $val) {
+                PMA_removeCookie('pmaPass-' . $key);
+                if (isset($_COOKIE['pmaPass-' . $key])) {
+                    unset($_COOKIE['pmaPass-' . $key]);
+                }
+            }
+        } else {
+            PMA_removeCookie('pmaPass-' . $GLOBALS['server']);
+            if (isset($_COOKIE['pmaPass-' . $GLOBALS['server']])) {
+                unset($_COOKIE['pmaPass-' . $GLOBALS['server']]);
+            }
+        }
+    }
+
+    if (! empty($_REQUEST['pma_username'])) {
+        // The user just logged in
+        $GLOBALS['PHP_AUTH_USER'] = $_REQUEST['pma_username'];
+        $GLOBALS['PHP_AUTH_PW']   = empty($_REQUEST['pma_password']) ? '' : $_REQUEST['pma_password'];
+        if ($GLOBALS['cfg']['AllowArbitraryServer'] && isset($_REQUEST['pma_servername'])) {
+            $GLOBALS['pma_auth_server'] = $_REQUEST['pma_servername'];
+        }
+        return true;
+    }
+
+    // At the end, try to set the $GLOBALS['PHP_AUTH_USER']
+    // and $GLOBALS['PHP_AUTH_PW'] variables from cookies
+
+    // servername
+    if ($GLOBALS['cfg']['AllowArbitraryServer']
+     && ! empty($_COOKIE['pmaServer-' . $GLOBALS['server']])) {
+        $GLOBALS['pma_auth_server'] = $_COOKIE['pmaServer-' . $GLOBALS['server']];
+    }
+
+    // username
+    if (empty($_COOKIE['pmaUser-' . $GLOBALS['server']])) {
+        return false;
+    }
+
+    $GLOBALS['PHP_AUTH_USER'] = PMA_blowfish_decrypt(
+        $_COOKIE['pmaUser-' . $GLOBALS['server']],
+        PMA_get_blowfish_secret());
+
+    // user was never logged in since session start
+    if (empty($_SESSION['last_access_time'])) {
+        return false;
+    }
+
+    // User inactive too long
+    if ($_SESSION['last_access_time'] < time() - $GLOBALS['cfg']['LoginCookieValidity']) {
+        PMA_cacheUnset('is_create_db_priv', true);
+        PMA_cacheUnset('is_process_priv', true);
+        PMA_cacheUnset('is_reload_priv', true);
+        PMA_cacheUnset('db_to_create', true);
+        PMA_cacheUnset('dbs_where_create_table_allowed', true);
+        $GLOBALS['no_activity'] = true;
+        PMA_auth_fails();
+        exit;
+    }
+
+    // password
+    if (empty($_COOKIE['pmaPass-' . $GLOBALS['server']])) {
+        return false;
+    }
+
+    $GLOBALS['PHP_AUTH_PW'] = PMA_blowfish_decrypt(
+        $_COOKIE['pmaPass-' . $GLOBALS['server']],
+        PMA_get_blowfish_secret());
+
+    if ($GLOBALS['PHP_AUTH_PW'] == "\xff(blank)") {
+        $GLOBALS['PHP_AUTH_PW'] = '';
+    }
+
+    $GLOBALS['from_cookie'] = true;
+
+    return true;
+} // end of the 'PMA_auth_check()' function
+
+
+/**
+ * Set the user and password after last checkings if required
+ *
+ * @uses    $GLOBALS['PHP_AUTH_USER']
+ * @uses    $GLOBALS['PHP_AUTH_PW']
+ * @uses    $GLOBALS['server']
+ * @uses    $GLOBALS['from_cookie']
+ * @uses    $GLOBALS['pma_auth_server']
+ * @uses    $cfg['Server']
+ * @uses    $cfg['AllowArbitraryServer']
+ * @uses    $cfg['LoginCookieStore']
+ * @uses    $cfg['PmaAbsoluteUri']
+ * @uses    $_SESSION['last_access_time']
+ * @uses    PMA_COMING_FROM_COOKIE_LOGIN
+ * @uses    PMA_setCookie()
+ * @uses    PMA_blowfish_encrypt()
+ * @uses    PMA_removeCookie()
+ * @uses    PMA_sendHeaderLocation()
+ * @uses    time()
+ * @uses    define()
+ * @return  boolean   always true
+ *
+ * @access  public
+ */
+function PMA_auth_set_user()
+{
+    global $cfg;
+
+    // Ensures valid authentication mode, 'only_db', bookmark database and
+    // table names and relation table name are used
+    if ($cfg['Server']['user'] != $GLOBALS['PHP_AUTH_USER']) {
+        foreach ($cfg['Servers'] as $idx => $current) {
+            if ($current['host'] == $cfg['Server']['host']
+             && $current['port'] == $cfg['Server']['port']
+             && $current['socket'] == $cfg['Server']['socket']
+             && $current['ssl'] == $cfg['Server']['ssl']
+             && $current['connect_type'] == $cfg['Server']['connect_type']
+             && $current['user'] == $GLOBALS['PHP_AUTH_USER']) {
+                $GLOBALS['server'] = $idx;
+                $cfg['Server']     = $current;
+                break;
+            }
+        } // end foreach
+    } // end if
+
+    if ($GLOBALS['cfg']['AllowArbitraryServer']
+     && ! empty($GLOBALS['pma_auth_server'])) {
+        /* Allow to specify 'host port' */
+        $parts = explode(' ', $GLOBALS['pma_auth_server']);
+        if (count($parts) == 2) {
+            $tmp_host = $parts[0];
+            $tmp_port = $parts[1];
+        } else {
+            $tmp_host = $GLOBALS['pma_auth_server'];
+            $tmp_port = '';
+        }
+        if ($cfg['Server']['host'] != $GLOBALS['pma_auth_server']) {
+            $cfg['Server']['host'] = $tmp_host;
+            if (!empty($tmp_port)) {
+                $cfg['Server']['port'] = $tmp_port;
+            }
+        }
+        unset($tmp_host, $tmp_port, $parts);
+    }
+    $cfg['Server']['user']     = $GLOBALS['PHP_AUTH_USER'];
+    $cfg['Server']['password'] = $GLOBALS['PHP_AUTH_PW'];
+
+    $_SESSION['last_access_time'] = time();
+
+    // Name and password cookies need to be refreshed each time
+    // Duration = one month for username
+    PMA_setCookie('pmaUser-' . $GLOBALS['server'],
+        PMA_blowfish_encrypt($cfg['Server']['user'],
+            PMA_get_blowfish_secret()));
+
+    // Duration = as configured
+    PMA_setCookie('pmaPass-' . $GLOBALS['server'],
+        PMA_blowfish_encrypt(!empty($cfg['Server']['password']) ? $cfg['Server']['password'] : "\xff(blank)",
+            PMA_get_blowfish_secret()),
+        null,
+        $GLOBALS['cfg']['LoginCookieStore']);
+
+    // Set server cookies if required (once per session) and, in this case, force
+    // reload to ensure the client accepts cookies
+    if (! $GLOBALS['from_cookie']) {
+        if ($GLOBALS['cfg']['AllowArbitraryServer']) {
+            if (! empty($GLOBALS['pma_auth_server'])) {
+                // Duration = one month for servername
+                PMA_setCookie('pmaServer-' . $GLOBALS['server'], $cfg['Server']['host']);
+            } else {
+                // Delete servername cookie
+                PMA_removeCookie('pmaServer-' . $GLOBALS['server']);
+            }
+        }
+
+        // URL where to go:
+        $redirect_url = $cfg['PmaAbsoluteUri'] . 'index.php';
+
+        // any parameters to pass?
+        $url_params = array();
+        if (strlen($GLOBALS['db'])) {
+            $url_params['db'] = $GLOBALS['db'];
+        }
+        if (strlen($GLOBALS['table'])) {
+            $url_params['table'] = $GLOBALS['table'];
+        }
+        // any target to pass?
+        if (! empty($GLOBALS['target']) && $GLOBALS['target'] != 'index.php') {
+            $url_params['target'] = $GLOBALS['target'];
+        }
+
+        /**
+         * whether we come from a fresh cookie login
+         */
+        define('PMA_COMING_FROM_COOKIE_LOGIN', true);
+        PMA_sendHeaderLocation($redirect_url . PMA_generate_common_url($url_params, '&'));
+        exit();
+    } // end if
+
+    return true;
+} // end of the 'PMA_auth_set_user()' function
+
+
+/**
+ * User is not allowed to login to MySQL -> authentication failed
+ *
+ * prepares error message and switches to PMA_auth() which display the error
+ * and the login form
+ *
+ * this function MUST exit/quit the application,
+ * currently doen by call to PMA_auth()
+ *
+ * @uses    $GLOBALS['server']
+ * @uses    $GLOBALS['allowDeny_forbidden']
+ * @uses    $GLOBALS['strAccessDenied']
+ * @uses    $GLOBALS['strNoActivity']
+ * @uses    $GLOBALS['strCannotLogin']
+ * @uses    $GLOBALS['no_activity']
+ * @uses    $cfg['LoginCookieValidity']
+ * @uses    PMA_removeCookie()
+ * @uses    PMA_getenv()
+ * @uses    PMA_DBI_getError()
+ * @uses    PMA_sanitize()
+ * @uses    PMA_auth()
+ * @uses    sprintf()
+ * @uses    basename()
+ * @access  public
+ */
+function PMA_auth_fails()
+{
+    global $conn_error;
+
+    // Deletes password cookie and displays the login form
+    PMA_removeCookie('pmaPass-' . $GLOBALS['server']);
+
+    if (! empty($GLOBALS['login_without_password_is_forbidden'])) {
+        $conn_error = $GLOBALS['strLoginWithoutPassword'];
+    } elseif (! empty($GLOBALS['allowDeny_forbidden'])) {
+        $conn_error = $GLOBALS['strAccessDenied'];
+    } elseif (! empty($GLOBALS['no_activity'])) {
+        $conn_error = sprintf($GLOBALS['strNoActivity'], $GLOBALS['cfg']['LoginCookieValidity']);
+        // Remember where we got timeout to return on same place
+        if (PMA_getenv('SCRIPT_NAME')) {
+            $GLOBALS['target'] = basename(PMA_getenv('SCRIPT_NAME'));
+            // avoid "missing parameter: field" on re-entry
+            if ('tbl_alter.php' == $GLOBALS['target']) {
+                $GLOBALS['target'] = 'tbl_structure.php' - possible LFI vuln in /home/starwiz/Desktop/phpmyad/libraries/auth/cookie.auth.lib.php
+fopen($filename, "rb") - possible RFI exploit in /home/starwiz/Desktop/phpmyad/bs_disp_as_mime_type.php
+file_get_contents($icon) - possible RFI exploit in /home/starwiz/Desktop/phpmyad/webapp.php
+fopen($save_filename, 'w') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/export.php
+fopen($import_file, 'r') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/import.php
+fopen($this->getName() - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/File.class.php
+fopen($file['tmp_name'], 'r') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/File.class.php
+fopen($tmp_filename, 'r') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/File.class.php
+fopen($tmp_filename, 'r') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/File.class.php
+fopen($this->getName() - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/File.class.php
+fopen($this->getName() - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/File.class.php
+fopen($this->getName() - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/File.class.php
+fopen($tmpfname, 'wb') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/kanji-encoding.lib.php
+fopen($file, 'r') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/kanji-encoding.lib.php
+fopen($filepath, 'rb') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/import.lib.php
+fopen($file, 'r') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/charset_conversion.lib.php
+fopen($tmpfname, 'w') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/charset_conversion.lib.php
+fopen($name,'wb') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/tcpdf/tcpdf.php
+fopen($this->_getfontpath() - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/tcpdf/tcpdf.php
+fopen($file,'rb') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/tcpdf/tcpdf.php
+fopen($file,'rb') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/tcpdf/tcpdf.php
+fopen($file,'rb') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/tcpdf/tcpdf.php
+fopen($filename,'rb') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/tcpdf/tcpdf.php
+file_get_contents($ctgfile) - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/tcpdf/tcpdf.php
+file_get_contents($tmp_filename) - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/export/xls.php
+file_get_contents($tmp_filename) - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/export/xlsx.php
+file_get_contents($confFile) - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/auth/swekey/swekey.auth.lib.php
+fopen($cachefile , "x") - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/auth/swekey/swekey.php
+file_get_contents($url) - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/auth/swekey/swekey.php
+file_get_contents($cachefile) - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/auth/swekey/swekey.php
+file_get_contents($imagePath) - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/PHPExcel/PHPExcel/Writer/Excel2007.php
+fopen($pFilename, 'w') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/PHPExcel/PHPExcel/Writer/PDF.php
+fopen($pFilename, 'w') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/PHPExcel/PHPExcel/Writer/HTML.php
+file_get_contents($filename) - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/PHPExcel/PHPExcel/Writer/Excel5.php
+file_get_contents($filename) - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/PHPExcel/PHPExcel/Writer/Excel5.php
+fopen($pFilename, 'w') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/PHPExcel/PHPExcel/Writer/CSV.php
+fopen($bitmap,"rb") - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/PHPExcel/PHPExcel/Writer/Excel5/Worksheet.php
+fopen($this->_fileName,'a+') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/PHPExcel/PHPExcel/CachedObjectStorage/DiscISAM.php
+fopen($this->_fileName,'a+') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/PHPExcel/PHPExcel/CachedObjectStorage/DiscISAM.php
+fopen($pFilename, 'r') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/PHPExcel/PHPExcel/Reader/SYLK.php
+fopen($pFilename, 'r') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/PHPExcel/PHPExcel/Reader/SYLK.php
+fopen($pFilename, 'r') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/PHPExcel/PHPExcel/Reader/Excel2003XML.php
+fopen($pFilename, 'r') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/PHPExcel/PHPExcel/Reader/CSV.php
+fopen($p_sFile,"rb") - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/PHPExcel/PHPExcel/Shared/Drawing.php
+file_get_contents($sFileName) - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/PHPExcel/PHPExcel/Shared/OLERead.php
+fopen($file, "r") - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/PHPExcel/PHPExcel/Shared/OLE.php
+fopen($path, 'r') - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/PHPExcel/PHPExcel/Shared/OLE.php
+fopen($this->_tmp_filename,"w+b") - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/PHPExcel/PHPExcel/Shared/OLE/PPS/Root.php
+fopen($filename, "wb") - possible RFI exploit in /home/starwiz/Desktop/phpmyad/libraries/PHPExcel/PHPExcel/Shared/OLE/PPS/Root.php
+$new_fontsize = $_COOKIE['pma_fontsize'] - possible path traversal using the cookie vuln in /home/starwiz/Desktop/phpmyad/libraries/Config.class.php
+$current_size = $_COOKIE['pma_fontsize'] - possible path traversal using the cookie vuln in /home/starwiz/Desktop/phpmyad/libraries/Config.class.php
+$_COOKIE['pma_switch_to_new'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/tbl_operations.php
+$_COOKIE['pma_switch_to_new'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/tbl_operations.php
+$_COOKIE['pma_switch_to_new'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/db_operations.php
+$_COOKIE['pma_switch_to_new'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/db_operations.php
+$_COOKIE['pma_fontsize'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/themes/darkblue_orange/css/theme_right.css.php
+$_COOKIE['pma_fontsize'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/themes/original/css/theme_left.css.php
+$_COOKIE['pma_fontsize'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/themes/original/css/theme_right.css.php
+$_COOKIE['pma_fontsize'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/themes/original/css/theme_right.css.php
+$_COOKIE['pma_db_filename_template'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/display_export.lib.php
+$_COOKIE['pma_db_filename_template'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/display_export.lib.php
+$_COOKIE['pma_table_filename_template'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/display_export.lib.php
+$_COOKIE['pma_table_filename_template'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/display_export.lib.php
+$_COOKIE['pma_server_filename_template'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/display_export.lib.php
+$_COOKIE['pma_server_filename_template'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/display_export.lib.php
+$_COOKIE['pmaCookieVer'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/common.inc.php
+$_COOKIE['pmaCookieVer'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/common.inc.php
+$_COOKIE['goto'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/common.inc.php
+$_COOKIE['back'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/common.inc.php
+$_COOKIE['pma_lang'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/url_generating.lib.php
+$_COOKIE['pma_charset'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/url_generating.lib.php
+$_COOKIE['pma_collation_connection'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/url_generating.lib.php
+$_COOKIE['pma_lang'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/url_generating.lib.php
+$_COOKIE['pma_charset'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/url_generating.lib.php
+$_COOKIE['pma_collation_connection'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/url_generating.lib.php
+$_COOKIE['pma_lang'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/url_generating.lib.php
+$_COOKIE['pma_charset'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/url_generating.lib.php
+$_COOKIE['pma_collation_connection'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/url_generating.lib.php
+$_COOKIE['pma_lang'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/select_lang.lib.php
+$_COOKIE['pma_lang'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/select_lang.lib.php
+$_COOKIE['pma_lang'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/select_lang.lib.php
+$_COOKIE['pma_lang'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/select_lang.lib.php
+$_COOKIE['pma_lang'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/select_lang.lib.php
+$_COOKIE['pma_charset'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/select_lang.lib.php
+$_COOKIE['pma_charset'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/select_lang.lib.php
+$_COOKIE['pma_collation_connection'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/Config.class.php
+$_COOKIE['pma_collation_connection'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/Config.class.php
+$_COOKIE['pma_collation_connection'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/Config.class.php
+$_COOKIE['pma_fontsize'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/Config.class.php
+$_COOKIE['pma_fontsize'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/Config.class.php
+$_COOKIE['pma_fontsize'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/Config.class.php
+$_COOKIE['pma_fontsize'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/Config.class.php
+$_COOKIE['pma_fontsize'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/Config.class.php
+$_COOKIE['pma_fontsize'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/Config.class.php
+$_COOKIE['pma_mcrypt_iv'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/auth/cookie.auth.lib.php
+$_COOKIE['pma_mcrypt_iv'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/auth/cookie.auth.lib.php
+$_COOKIE['pmaPass-' . $key])) {
+                    unset($_COOKIE['pmaPass-' . $key]);
+                }
+            }
+        } else {
+            PMA_removeCookie('pmaPass-' . $GLOBALS['server'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/auth/cookie.auth.lib.php
+$_COOKIE['pmaPass-' . $GLOBALS['server'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/auth/cookie.auth.lib.php
+$_COOKIE['pmaPass-' . $GLOBALS['server'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/auth/cookie.auth.lib.php
+$_COOKIE['pmaServer-' . $GLOBALS['server'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/auth/cookie.auth.lib.php
+$_COOKIE['pmaServer-' . $GLOBALS['server'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/auth/cookie.auth.lib.php
+$_COOKIE['pmaUser-' . $GLOBALS['server'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/auth/cookie.auth.lib.php
+$_COOKIE['pmaUser-' . $GLOBALS['server'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/auth/cookie.auth.lib.php
+$_COOKIE['pmaPass-' . $GLOBALS['server'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/auth/cookie.auth.lib.php
+$_COOKIE['pmaPass-' . $GLOBALS['server'] - cookie was called upon in /home/starwiz/Desktop/phpmyad/libraries/auth/cookie.auth.lib.php
